@@ -1,44 +1,54 @@
 const scenarios = [
   {
-    id: "no-results",
-    label: "No results",
-    title: "No results found",
+    id: "page-level",
+    label: "Page level",
+    title: "No data found",
     body:
-      "We couldn't find anything matching your search. Try adjusting your filters or using different keywords.",
-    action: "Clear search",
+      "Reset filters or adjust the date range.",
+    action: "Reset Filters",
     artwork: "lissajous",
   },
   {
-    id: "empty-inbox",
-    label: "Empty inbox",
-    title: "Inbox zero",
+    id: "data-states",
+    label: "Data states",
+    title: "Empty tables, charts, and lists",
     body:
-      "You're all caught up. New messages will appear here as soon as conversations start coming in.",
-    action: "Set notifications",
+      "Use these for row-based views when content is missing, including loading skeletons, no data found, and no results after filters are applied.",
+    action: "Review data states",
     artwork: "waves",
   },
   {
-    id: "no-data",
-    label: "No data",
-    title: "No data yet",
+    id: "placeholder",
+    label: "Placeholder",
+    title: "Reserved space for upcoming content",
     body:
-      "There isn't enough activity to populate this view yet. Connect a source or wait for fresh events to arrive.",
-    action: "Connect source",
+      'Use placeholders where content will appear later, like an AI Analyst panel, a "no filter selected" area, or an empty spot for adding an XYZ card.',
+    action: "View placeholders",
     artwork: "harmonics",
   },
   {
-    id: "onboarding",
-    label: "Onboarding",
-    title: "Start your setup",
+    id: "component-level",
+    label: "Component level",
+    title: "Smaller empty widgets and panels",
     body:
-      "Complete a few quick steps to unlock the workspace. We'll guide you through the essentials from here.",
-    action: "Begin onboarding",
+      "Use these inside individual components, such as no filter options, no members found, card loading, or an open widgets prompt.",
+    action: "Inspect components",
     artwork: "rosette",
+  },
+  {
+    id: "guidance-prompt",
+    label: "Guidance / prompt",
+    title: "Action-first guidance states",
+    body:
+      "Use these to nudge the next step forward, like search a query, select something to begin, or open widgets.",
+    action: "Open prompts",
+    artwork: "lissajous",
   },
 ];
 
 const tabList = document.querySelector(".tab-list");
 const panel = document.querySelector("#panel");
+const state = document.querySelector("#state");
 const illustration = document.querySelector("#illustration");
 const stateTitle = document.querySelector("#state-title");
 const stateBody = document.querySelector("#state-body");
@@ -46,6 +56,8 @@ const stateButton = document.querySelector("#state-button");
 const themeToggle = document.querySelector("#theme-toggle");
 
 let activeScenario = scenarios[0].id;
+let pageLevelAnimationFrame = 0;
+let pageLevelAnimationStart = 0;
 
 function createTabButton(scenario) {
   const button = document.createElement("button");
@@ -78,111 +90,315 @@ function handleTabKeydown(event) {
   document.querySelector(`#tab-${nextScenario.id}`)?.focus();
 }
 
+const TAU = Math.PI * 2;
+
+function getLissajousPoint(config, t) {
+  const {
+    cx,
+    cy,
+    amplitudeX,
+    amplitudeY,
+    frequencyX,
+    frequencyY,
+    phase = 0,
+    rotation = 0,
+  } = config;
+
+  const rawX = amplitudeX * Math.sin(frequencyX * t + phase);
+  const rawY = amplitudeY * Math.sin(frequencyY * t);
+
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+
+  return {
+    x: cx + rawX * cos - rawY * sin,
+    y: cy + rawX * sin + rawY * cos,
+  };
+}
+
+function getLissajousPath(config) {
+  const samples = config.samples ?? 240;
+  const points = [];
+
+  for (let index = 0; index < samples; index += 1) {
+    const t = (TAU * index) / samples;
+    points.push(getLissajousPoint(config, t));
+  }
+
+  if (!points.length) return "";
+
+  let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)} `;
+
+  for (let index = 0; index < points.length; index += 1) {
+    const p0 = points[(index - 1 + points.length) % points.length];
+    const p1 = points[index];
+    const p2 = points[(index + 1) % points.length];
+    const p3 = points[(index + 2) % points.length];
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    path += `C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} `;
+  }
+
+  return `${path}Z`;
+}
+
+function renderCurve(className, config, extraAttributes = "") {
+  return `<path class="${className}" d="${getLissajousPath(config)}" fill="none" ${extraAttributes}></path>`;
+}
+
+function renderNode(className, config, t, radius) {
+  const point = getLissajousPoint(config, t);
+  return `<circle class="${className}" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="${radius}"></circle>`;
+}
+
+const illustrationStates = {
+  "page-level": {
+    svgClass: "state-curve-svg page-curve-svg",
+    curve: {
+      cx: 110,
+      cy: 70,
+      amplitudeX: 56,
+      amplitudeY: 40,
+      frequencyX: 1,
+      frequencyY: 2,
+      phase: Math.PI / 2,
+      rotation: 0,
+      samples: 260,
+    },
+  },
+  "data-states": {
+    svgClass: "state-curve-svg data-curve-svg",
+    curve: {
+      cx: 110,
+      cy: 70,
+      amplitudeX: 64,
+      amplitudeY: 38,
+      frequencyX: 1,
+      frequencyY: 1,
+      phase: Math.PI / 4,
+      rotation: -0.3,
+      samples: 220,
+    },
+  },
+  placeholder: {
+    svgClass: "state-curve-svg placeholder-curve-svg",
+    curve: {
+      cx: 110,
+      cy: 70,
+      amplitudeX: 42,
+      amplitudeY: 42,
+      frequencyX: 1,
+      frequencyY: 1,
+      phase: Math.PI / 2,
+      rotation: 0,
+      samples: 220,
+    },
+  },
+  "component-level": {
+    svgClass: "state-curve-svg component-curve-svg",
+    curve: {
+      cx: 110,
+      cy: 70,
+      amplitudeX: 38,
+      amplitudeY: 54,
+      frequencyX: 2,
+      frequencyY: 1,
+      phase: Math.PI / 2,
+      rotation: 0,
+      samples: 260,
+    },
+  },
+  "guidance-prompt": {
+    svgClass: "state-curve-svg guidance-curve-svg",
+    curve: {
+      cx: 110,
+      cy: 70,
+      amplitudeX: 52,
+      amplitudeY: 46,
+      frequencyX: 2,
+      frequencyY: 3,
+      phase: Math.PI / 2,
+      rotation: 0.08,
+      samples: 280,
+    },
+  },
+};
+
+const pageLevelCurveStates = [
+  {
+    cx: 110,
+    cy: 70,
+    amplitudeX: 64,
+    amplitudeY: 38,
+    frequencyX: 1,
+    frequencyY: 1,
+    phase: Math.PI / 4,
+    rotation: 0,
+    samples: 320,
+  },
+  {
+    cx: 110,
+    cy: 70,
+    amplitudeX: 56,
+    amplitudeY: 40,
+    frequencyX: 1,
+    frequencyY: 2,
+    phase: Math.PI / 2,
+    rotation: 0,
+    samples: 320,
+  },
+  {
+    cx: 110,
+    cy: 70,
+    amplitudeX: 52,
+    amplitudeY: 46,
+    frequencyX: 2,
+    frequencyY: 3,
+    phase: Math.PI / 2,
+    rotation: 0,
+    samples: 320,
+  },
+];
+
+function interpolateCurve(from, to, progress) {
+  return {
+    cx: from.cx + (to.cx - from.cx) * progress,
+    cy: from.cy + (to.cy - from.cy) * progress,
+    amplitudeX: from.amplitudeX + (to.amplitudeX - from.amplitudeX) * progress,
+    amplitudeY: from.amplitudeY + (to.amplitudeY - from.amplitudeY) * progress,
+    frequencyX: from.frequencyX + (to.frequencyX - from.frequencyX) * progress,
+    frequencyY: from.frequencyY + (to.frequencyY - from.frequencyY) * progress,
+    phase: from.phase + (to.phase - from.phase) * progress,
+    rotation: from.rotation + (to.rotation - from.rotation) * progress,
+    samples: Math.max(from.samples ?? 260, to.samples ?? 260),
+  };
+}
+
+function easeInOutSine(progress) {
+  return -(Math.cos(Math.PI * progress) - 1) / 2;
+}
+
+function stopPageLevelAnimation() {
+  if (!pageLevelAnimationFrame) return;
+
+  cancelAnimationFrame(pageLevelAnimationFrame);
+  pageLevelAnimationFrame = 0;
+  pageLevelAnimationStart = 0;
+}
+
+function animatePageLevelIllustration() {
+  stopPageLevelAnimation();
+
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reducedMotion) return;
+
+  const primaryPath = illustration.querySelector(".page-curve-svg .curve-path-page");
+  const glowPath = illustration.querySelector(".page-curve-svg .curve-glow");
+  const leadNode = illustration.querySelector(".page-curve-svg .motion-node-page");
+  const trailNode = illustration.querySelector(".page-curve-svg .motion-node-page-soft");
+
+  if (!primaryPath || !glowPath || !leadNode || !trailNode) return;
+
+  const cycleMs = 3600;
+  const totalMs = cycleMs * pageLevelCurveStates.length;
+
+  function step(timestamp) {
+    if (activeScenario !== "page-level") {
+      stopPageLevelAnimation();
+      return;
+    }
+
+    if (!pageLevelAnimationStart) {
+      pageLevelAnimationStart = timestamp;
+    }
+
+    const elapsed = (timestamp - pageLevelAnimationStart) % totalMs;
+    const stateProgress = elapsed / cycleMs;
+    const stateIndex = Math.floor(stateProgress) % pageLevelCurveStates.length;
+    const stateElapsed = stateProgress - Math.floor(stateProgress);
+    const from = pageLevelCurveStates[stateIndex];
+    const to = pageLevelCurveStates[(stateIndex + 1) % pageLevelCurveStates.length];
+    const transitionProgress = easeInOutSine(stateElapsed);
+    const curve = interpolateCurve(from, to, transitionProgress);
+    const glowCurve = {
+      ...curve,
+      amplitudeX: curve.amplitudeX + 4,
+      amplitudeY: curve.amplitudeY + 4,
+    };
+    const transitionSoftness = Math.sin(stateElapsed * Math.PI);
+    const primaryOpacity = 1 - transitionSoftness * 0.18;
+    const glowOpacity = 0.7 - transitionSoftness * 0.28;
+    const nodeOpacity = 1 - transitionSoftness * 0.14;
+    const orbit = ((timestamp - pageLevelAnimationStart) / 6500) % 1;
+    const leadPoint = getLissajousPoint(curve, orbit * TAU);
+    const trailPoint = getLissajousPoint(curve, ((orbit + 0.5) % 1) * TAU);
+
+    primaryPath.setAttribute("d", getLissajousPath(curve));
+    glowPath.setAttribute("d", getLissajousPath(glowCurve));
+    primaryPath.setAttribute("opacity", primaryOpacity.toFixed(3));
+    glowPath.setAttribute("opacity", glowOpacity.toFixed(3));
+    leadNode.setAttribute("cx", leadPoint.x.toFixed(2));
+    leadNode.setAttribute("cy", leadPoint.y.toFixed(2));
+    leadNode.setAttribute("opacity", nodeOpacity.toFixed(3));
+    trailNode.setAttribute("cx", trailPoint.x.toFixed(2));
+    trailNode.setAttribute("cy", trailPoint.y.toFixed(2));
+    trailNode.setAttribute("opacity", Math.max(nodeOpacity - 0.18, 0.42).toFixed(3));
+
+    pageLevelAnimationFrame = requestAnimationFrame(step);
+  }
+
+  pageLevelAnimationFrame = requestAnimationFrame(step);
+}
+
 function getArtworkMarkup(artwork) {
-  if (artwork === "waves") {
-    return `
-      <div class="artboard artboard-waves">
-        <svg viewBox="0 0 220 140" class="art-svg waves-svg" aria-hidden="true">
-          <defs>
-            <linearGradient id="wavesGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#dcecf8"></stop>
-              <stop offset="55%" stop-color="#9ec5e3"></stop>
-              <stop offset="100%" stop-color="#70b1d6"></stop>
-            </linearGradient>
-            <filter id="wavesBlur">
-              <feGaussianBlur stdDeviation="8"></feGaussianBlur>
-            </filter>
-          </defs>
-          <path class="graphic-guide" d="M18 70 H202"></path>
-          <path class="graphic-guide graphic-guide-faint" d="M18 44 H202"></path>
-          <path class="graphic-guide graphic-guide-faint" d="M18 96 H202"></path>
-          <path class="graphic-glow wave-glow" d="M-8 60 C 22 28, 58 28, 88 60 S 152 92, 228 58" fill="none" stroke="url(#wavesGradient)" stroke-width="20" stroke-linecap="round" filter="url(#wavesBlur)"></path>
-          <path class="graphic-primary wave-main" d="M8 70 C 32 44, 56 44, 80 70 S 128 96, 152 70 S 176 44, 202 70" fill="none"></path>
-          <path class="graphic-secondary wave-alt" d="M8 70 C 32 96, 56 96, 80 70 S 128 44, 152 70 S 176 96, 202 70" fill="none"></path>
-          <path class="graphic-tertiary wave-tert" d="M8 82 C 32 62, 56 62, 80 82 S 128 102, 152 82 S 176 62, 202 82" fill="none"></path>
-          <circle class="graphic-node" cx="80" cy="70" r="3.5"></circle>
-          <circle class="graphic-node graphic-node-soft" cx="152" cy="70" r="3.5"></circle>
-        </svg>
-      </div>
-    `;
-  }
-
-  if (artwork === "harmonics") {
-    return `
-      <div class="artboard artboard-harmonics">
-        <svg viewBox="0 0 220 140" class="art-svg harmonics-svg" aria-hidden="true">
-          <defs>
-            <linearGradient id="harmonicGlow" x1="8%" y1="0%" x2="92%" y2="100%">
-              <stop offset="0%" stop-color="#edf7ff"></stop>
-              <stop offset="50%" stop-color="#bad9ee"></stop>
-              <stop offset="100%" stop-color="#79b4d7"></stop>
-            </linearGradient>
-          </defs>
-          <rect class="graphic-frame" x="34" y="28" width="152" height="84" rx="18"></rect>
-          <path class="graphic-guide" d="M50 49 H170"></path>
-          <path class="graphic-guide" d="M50 70 H170"></path>
-          <path class="graphic-guide" d="M50 91 H170"></path>
-          <path class="graphic-glow harmonic-glow" d="M50 49 C 64 38, 76 38, 90 49 S 116 60, 130 49 S 156 38, 170 49" fill="none" stroke="url(#harmonicGlow)" stroke-width="12" stroke-linecap="round"></path>
-          <path class="graphic-primary harmonic-a" d="M50 49 C 64 38, 76 38, 90 49 S 116 60, 130 49 S 156 38, 170 49" fill="none"></path>
-          <path class="graphic-secondary harmonic-b" d="M50 70 C 68 52, 86 52, 104 70 S 140 88, 170 64" fill="none"></path>
-          <path class="graphic-tertiary harmonic-c" d="M50 91 C 60 74, 72 74, 82 91 S 104 108, 114 91 S 136 74, 146 91 S 160 108, 170 91" fill="none"></path>
-          <circle class="graphic-node" cx="104" cy="70" r="3"></circle>
-        </svg>
-      </div>
-    `;
-  }
-
-  if (artwork === "rosette") {
-    return `
-      <div class="artboard artboard-rosette">
-        <svg viewBox="0 0 220 140" class="art-svg rosette-svg" aria-hidden="true">
-          <defs>
-            <linearGradient id="rosetteGlow" x1="12%" y1="20%" x2="88%" y2="74%">
-              <stop offset="0%" stop-color="#ebf6ff"></stop>
-              <stop offset="48%" stop-color="#b8d8ed"></stop>
-              <stop offset="100%" stop-color="#7cb5d8"></stop>
-            </linearGradient>
-          </defs>
-          <circle class="graphic-guide" cx="110" cy="70" r="42"></circle>
-          <circle class="graphic-guide graphic-guide-faint" cx="110" cy="70" r="58"></circle>
-          <path class="graphic-glow rosette-glow" d="M66 70 C 66 34, 154 34, 154 70 C 154 106, 66 106, 66 70 Z" fill="none" stroke="url(#rosetteGlow)" stroke-width="14" stroke-linecap="round"></path>
-          <path class="graphic-primary rosette-primary" d="M66 70 C 66 34, 154 34, 154 70 C 154 106, 66 106, 66 70 Z" fill="none"></path>
-          <path class="graphic-secondary rosette-secondary" d="M52 70 C 52 20, 168 20, 168 70 C 168 120, 52 120, 52 70 Z" fill="none"></path>
-          <path class="graphic-tertiary rosette-tertiary" d="M66 46 C 96 16, 124 16, 154 46 M66 94 C 96 124, 124 124, 154 94" fill="none"></path>
-          <circle class="graphic-node" cx="110" cy="70" r="3.5"></circle>
-        </svg>
-      </div>
-    `;
-  }
+  const state = illustrationStates[artwork] ?? illustrationStates["page-level"];
+  const glowCurve = {
+    ...state.curve,
+    amplitudeX: state.curve.amplitudeX + 4,
+    amplitudeY: state.curve.amplitudeY + 4,
+    samples: Math.max(state.curve.samples, 260),
+  };
+  const isPageLevel = artwork === "page-level";
 
   return `
     <div class="artboard artboard-lissajous">
-      <svg viewBox="0 0 220 140" class="art-svg lissajous-svg" aria-hidden="true">
+      <svg viewBox="0 0 220 140" class="art-svg ${state.svgClass}" aria-hidden="true">
         <defs>
-          <linearGradient id="lissajousGlow" x1="18%" y1="12%" x2="88%" y2="84%">
-            <stop offset="0%" stop-color="#edf6ff"></stop>
-            <stop offset="55%" stop-color="#b4d5eb"></stop>
-            <stop offset="100%" stop-color="#81b7d9"></stop>
+          <linearGradient id="stateCurveGradient" x1="18%" y1="12%" x2="88%" y2="84%">
+            <stop offset="0%" stop-color="var(--art-grad-warm)"></stop>
+            <stop offset="52%" stop-color="var(--art-grad-soft)"></stop>
+            <stop offset="100%" stop-color="var(--art-grad-cool)"></stop>
           </linearGradient>
-          <filter id="lissajousBlur">
+          <filter id="stateCurveBlur">
             <feGaussianBlur stdDeviation="8"></feGaussianBlur>
           </filter>
         </defs>
-        <path class="graphic-guide" d="M36 70 H184"></path>
-        <path class="graphic-guide graphic-guide-faint" d="M110 22 V118"></path>
-        <path class="graphic-glow lissajous-glow" d="M48 70 C 72 26, 96 26, 110 70 C 124 114, 148 114, 172 70" fill="none" stroke="url(#lissajousGlow)" stroke-width="14" stroke-linecap="round" filter="url(#lissajousBlur)"></path>
-        <path class="graphic-primary loop-a" d="M48 70 C 72 26, 96 26, 110 70 C 124 114, 148 114, 172 70" fill="none"></path>
-        <path class="graphic-secondary loop-b" d="M48 70 C 72 114, 96 114, 110 70 C 124 26, 148 26, 172 70" fill="none"></path>
-        <circle class="graphic-node" cx="110" cy="70" r="3.5"></circle>
-        <circle class="graphic-node graphic-node-soft" cx="48" cy="70" r="2.5"></circle>
-        <circle class="graphic-node graphic-node-soft" cx="172" cy="70" r="2.5"></circle>
+        ${renderCurve(
+          "graphic-glow curve-glow",
+          glowCurve,
+          'stroke="url(#stateCurveGradient)" stroke-width="14" stroke-linecap="round" filter="url(#stateCurveBlur)"'
+        )}
+        ${renderCurve(`graphic-primary curve-path${isPageLevel ? " curve-path-page" : ""}`, state.curve)}
+        ${isPageLevel
+          ? `${renderNode("graphic-node motion-node motion-node-page", state.curve, 0, 4.25)}
+             ${renderNode("graphic-node graphic-node-soft motion-node motion-node-page-soft", state.curve, 0.5 * TAU, 4.25)}`
+          : renderNode("graphic-node", state.curve, 0.125 * TAU, 3.25)}
       </svg>
     </div>
   `;
 }
 
 function renderIllustration(artwork) {
+  stopPageLevelAnimation();
   illustration.innerHTML = getArtworkMarkup(artwork);
+
+  if (artwork === "page-level") {
+    animatePageLevelIllustration();
+  }
 }
 
 function setScenario(id) {
@@ -198,10 +414,11 @@ function setScenario(id) {
   });
 
   panel.setAttribute("aria-labelledby", `tab-${id}`);
+  state.dataset.scenario = id;
   stateTitle.textContent = scenario.title;
   stateBody.textContent = scenario.body;
   stateButton.textContent = scenario.action;
-  renderIllustration(scenario.artwork);
+  renderIllustration(scenario.id);
 }
 
 scenarios.forEach((scenario) => {
