@@ -35,10 +35,56 @@
 
       <section class="panel" id="panel" role="tabpanel" aria-live="polite">
         <div class="state" id="state">
-          <div class="illustration" id="illustration" aria-hidden="true"></div>
-          <h1 class="state-title" id="state-title"></h1>
-          <p class="state-body" id="state-body"></p>
-          <button class="state-button" id="state-button" type="button"></button>
+          <div class="state-preview">
+            <div class="illustration" id="illustration" aria-hidden="true"></div>
+            <h1 class="state-title" id="state-title"></h1>
+            <p class="state-body" id="state-body"></p>
+            <button class="state-button" id="state-button" type="button"></button>
+          </div>
+          <form class="custom-controls" id="custom-controls" aria-label="Custom Lissajous controls">
+            <label class="control-field">
+              <span class="control-label">Amplitude X</span>
+              <input id="control-amplitude-x" type="range" min="24" max="80" step="1" />
+              <output class="control-value" id="value-amplitude-x" for="control-amplitude-x"></output>
+            </label>
+            <label class="control-field">
+              <span class="control-label">Amplitude Y</span>
+              <input id="control-amplitude-y" type="range" min="24" max="80" step="1" />
+              <output class="control-value" id="value-amplitude-y" for="control-amplitude-y"></output>
+            </label>
+            <label class="control-field">
+              <span class="control-label">Frequency X</span>
+              <input id="control-frequency-x" type="range" min="1" max="5" step="1" />
+              <output class="control-value" id="value-frequency-x" for="control-frequency-x"></output>
+            </label>
+            <label class="control-field">
+              <span class="control-label">Frequency Y</span>
+              <input id="control-frequency-y" type="range" min="1" max="5" step="1" />
+              <output class="control-value" id="value-frequency-y" for="control-frequency-y"></output>
+            </label>
+            <label class="control-field">
+              <span class="control-label">Phase</span>
+              <input id="control-phase" type="range" min="0" max="6.28" step="0.01" />
+              <output class="control-value" id="value-phase" for="control-phase"></output>
+            </label>
+            <label class="control-field">
+              <span class="control-label">Rotation</span>
+              <input id="control-rotation" type="range" min="-0.8" max="0.8" step="0.01" />
+              <output class="control-value" id="value-rotation" for="control-rotation"></output>
+            </label>
+            <label class="control-field control-field-full">
+              <span class="control-label">Empty state title</span>
+              <input id="control-title" type="text" />
+            </label>
+            <label class="control-field control-field-full">
+              <span class="control-label">Description</span>
+              <textarea id="control-description" rows="3"></textarea>
+            </label>
+            <label class="control-field control-field-full">
+              <span class="control-label">Button</span>
+              <input id="control-button" type="text" />
+            </label>
+          </form>
         </div>
       </section>
     </main>

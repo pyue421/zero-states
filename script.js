@@ -18,31 +18,13 @@ const scenarios = [
     artwork: "waves",
   },
   {
-    id: "placeholder",
-    label: "Placeholder",
-    title: "Reserved space for upcoming content",
+    id: "custom",
+    label: "Custom",
+    title: "Tune your own Lissajous curve",
     body:
-      'Use placeholders where content will appear later, like an AI Analyst panel, a "no filter selected" area, or an empty spot for adding an XYZ card.',
-    action: "View placeholders",
-    artwork: "harmonics",
-  },
-  {
-    id: "component-level",
-    label: "Component level",
-    title: "Smaller empty widgets and panels",
-    body:
-      "Use these inside individual components, such as no filter options, no members found, card loading, or an open widgets prompt.",
-    action: "Inspect components",
-    artwork: "rosette",
-  },
-  {
-    id: "guidance-prompt",
-    label: "Guidance / prompt",
-    title: "Action-first guidance states",
-    body:
-      "Use these to nudge the next step forward, like search a query, select something to begin, or open widgets.",
-    action: "Open prompts",
-    artwork: "lissajous",
+      "Adjust amplitudes, frequencies, phase, and rotation to build a custom zero-state curve live.",
+    action: "",
+    artwork: "custom",
   },
 ];
 
@@ -54,10 +36,38 @@ const stateTitle = document.querySelector("#state-title");
 const stateBody = document.querySelector("#state-body");
 const stateButton = document.querySelector("#state-button");
 const themeToggle = document.querySelector("#theme-toggle");
+const customControls = document.querySelector("#custom-controls");
 
 let activeScenario = scenarios[0].id;
 let pageLevelAnimationFrame = 0;
 let pageLevelAnimationStart = 0;
+
+const customCurve = {
+  cx: 110,
+  cy: 70,
+  amplitudeX: 54,
+  amplitudeY: 42,
+  frequencyX: 2,
+  frequencyY: 3,
+  phase: Math.PI / 2,
+  rotation: 0,
+  samples: 280,
+};
+
+const customContent = {
+  title: "Tune your own Lissajous curve",
+  body: "Adjust amplitudes, frequencies, phase, and rotation to build a custom zero-state.",
+  action: "Try custom state",
+};
+
+const customControlConfig = [
+  { key: "amplitudeX", inputId: "control-amplitude-x", outputId: "value-amplitude-x", format: (value) => `${Math.round(value)}` },
+  { key: "amplitudeY", inputId: "control-amplitude-y", outputId: "value-amplitude-y", format: (value) => `${Math.round(value)}` },
+  { key: "frequencyX", inputId: "control-frequency-x", outputId: "value-frequency-x", format: (value) => `${Math.round(value)}` },
+  { key: "frequencyY", inputId: "control-frequency-y", outputId: "value-frequency-y", format: (value) => `${Math.round(value)}` },
+  { key: "phase", inputId: "control-phase", outputId: "value-phase", format: (value) => `${(value / Math.PI).toFixed(2)}π` },
+  { key: "rotation", inputId: "control-rotation", outputId: "value-rotation", format: (value) => `${(value * 57.3).toFixed(0)}°` },
+];
 
 function createTabButton(scenario) {
   const button = document.createElement("button");
@@ -184,19 +194,9 @@ const illustrationStates = {
       samples: 220,
     },
   },
-  placeholder: {
-    svgClass: "state-curve-svg placeholder-curve-svg",
-    curve: {
-      cx: 110,
-      cy: 70,
-      amplitudeX: 42,
-      amplitudeY: 42,
-      frequencyX: 1,
-      frequencyY: 1,
-      phase: Math.PI / 2,
-      rotation: 0,
-      samples: 220,
-    },
+  custom: {
+    svgClass: "state-curve-svg custom-curve-svg",
+    curve: customCurve,
   },
   "component-level": {
     svgClass: "state-curve-svg component-curve-svg",
@@ -280,6 +280,46 @@ function interpolateCurve(from, to, progress) {
 
 function easeInOutSine(progress) {
   return -(Math.cos(Math.PI * progress) - 1) / 2;
+}
+
+function syncCustomControls() {
+  customControlConfig.forEach(({ key, inputId, outputId, format }) => {
+    const input = document.querySelector(`#${inputId}`);
+    const output = document.querySelector(`#${outputId}`);
+    if (!input || !output) return;
+
+    input.value = String(customCurve[key]);
+    output.value = format(customCurve[key]);
+    output.textContent = format(customCurve[key]);
+  });
+}
+
+function updateCustomCurve(key, value) {
+  customCurve[key] = value;
+  syncCustomControls();
+
+  if (activeScenario === "custom") {
+    renderIllustration("custom");
+  }
+}
+
+function updateCustomContent(key, value) {
+  customContent[key] = value;
+
+  if (activeScenario !== "custom") return;
+
+  if (key === "title") {
+    stateTitle.textContent = value;
+  }
+
+  if (key === "body") {
+    stateBody.textContent = value;
+  }
+
+  if (key === "action") {
+    stateButton.textContent = value;
+    stateButton.hidden = !value.trim();
+  }
 }
 
 function stopPageLevelAnimation() {
@@ -415,11 +455,48 @@ function setScenario(id) {
 
   panel.setAttribute("aria-labelledby", `tab-${id}`);
   state.dataset.scenario = id;
-  stateTitle.textContent = scenario.title;
-  stateBody.textContent = scenario.body;
-  stateButton.textContent = scenario.action;
+  stateTitle.textContent = id === "custom" ? customContent.title : scenario.title;
+  stateBody.textContent = id === "custom" ? customContent.body : scenario.body;
+  stateButton.textContent = id === "custom" ? customContent.action : scenario.action;
+  stateButton.hidden = !(id === "custom" ? customContent.action.trim() : scenario.action);
+  customControls.hidden = id !== "custom";
   renderIllustration(scenario.id);
 }
+
+customControlConfig.forEach(({ key, inputId, outputId, format }) => {
+  const input = document.querySelector(`#${inputId}`);
+  const output = document.querySelector(`#${outputId}`);
+  if (!input || !output) return;
+
+  input.addEventListener("input", (event) => {
+    const nextValue = Number(event.target.value);
+    output.value = format(nextValue);
+    output.textContent = format(nextValue);
+    updateCustomCurve(key, nextValue);
+  });
+});
+
+const customTitleInput = document.querySelector("#control-title");
+const customDescriptionInput = document.querySelector("#control-description");
+const customButtonInput = document.querySelector("#control-button");
+
+customTitleInput.value = customContent.title;
+customDescriptionInput.value = customContent.body;
+customButtonInput.value = customContent.action;
+
+customTitleInput.addEventListener("input", (event) => {
+  updateCustomContent("title", event.target.value);
+});
+
+customDescriptionInput.addEventListener("input", (event) => {
+  updateCustomContent("body", event.target.value);
+});
+
+customButtonInput.addEventListener("input", (event) => {
+  updateCustomContent("action", event.target.value);
+});
+
+syncCustomControls();
 
 scenarios.forEach((scenario) => {
   tabList.appendChild(createTabButton(scenario));

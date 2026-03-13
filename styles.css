@@ -157,6 +157,30 @@ button {
   color: #18191d;
 }
 
+.tab-button#tab-custom {
+  border: 1px dashed var(--line-strong);
+  background: #eeeeee;
+  color: #1d1d1b;
+  box-shadow: none;
+}
+
+.tab-button#tab-custom:hover {
+  box-shadow: 0 8px 20px rgba(17, 17, 17, 0.05);
+}
+
+.tab-button#tab-custom[aria-selected="true"] {
+  background: #ffffff;
+  color: #1d1d1b;
+  box-shadow: 0 8px 20px rgba(17, 17, 17, 0.05);
+}
+
+.dark .tab-button#tab-custom,
+.dark .tab-button#tab-custom[aria-selected="true"] {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: #f3f0e8;
+  color: #18191d;
+}
+
 .tab-button:focus-visible,
 .theme-toggle:focus-visible,
 .state-button:focus-visible {
@@ -174,8 +198,8 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 48px;
-  height: 30px;
+  min-width: 54px;
+  height: 38px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -185,8 +209,8 @@ button {
 .toggle-track {
   position: relative;
   display: block;
-  width: 42px;
-  height: 22px;
+  width: 48px;
+  height: 28px;
   border-radius: 999px;
   background: #26282d;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
@@ -195,10 +219,10 @@ button {
 
 .toggle-thumb {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 16px;
-  height: 16px;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
   border-radius: 999px;
   background: #ffffff;
   transition: transform 180ms ease, background 180ms ease;
@@ -233,6 +257,10 @@ button {
   text-align: center;
   gap: 10px;
   animation: fadeUp 280ms ease;
+}
+
+.state-preview {
+  display: contents;
 }
 
 .illustration {
@@ -452,6 +480,116 @@ button {
   font-size: clamp(16px, 1.25vw, 18px);
 }
 
+.state[data-scenario="custom"] {
+  width: 100%;
+  max-width: 860px;
+  grid-template-columns: minmax(0, 300px) minmax(0, 440px);
+  grid-template-areas: "preview controls";
+  align-items: center;
+  justify-items: stretch;
+  justify-content: center;
+  column-gap: 32px;
+  row-gap: 0;
+  text-align: center;
+}
+
+.state[data-scenario="custom"] .state-preview {
+  grid-area: preview;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 8px;
+}
+
+.state[data-scenario="custom"] .custom-controls {
+  grid-area: controls;
+  width: 100%;
+  margin-top: 0;
+  align-self: center;
+}
+
+.state[data-scenario="custom"] .illustration {
+  margin-bottom: -8px;
+}
+
+.state[data-scenario="custom"] .state-title {
+  max-width: 20ch;
+  text-align: center;
+}
+
+.state[data-scenario="custom"] .state-body {
+  max-width: 30ch;
+  text-align: center;
+}
+
+.state[data-scenario="custom"] .state-button {
+  margin-top: 2px;
+}
+
+.custom-controls {
+  width: min(100%, 620px);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  margin-top: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  text-align: left;
+}
+
+.custom-controls[hidden] {
+  display: none;
+}
+
+.dark .custom-controls {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.control-field {
+  display: grid;
+  gap: 6px;
+}
+
+.control-field-full {
+  grid-column: 1 / -1;
+}
+
+.control-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.control-field input[type="text"],
+.control-field textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+
+.control-field textarea {
+  min-height: 88px;
+}
+
+.control-field input[type="range"] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--brand-indigo);
+}
+
+.control-value {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: -0.02em;
+}
+
 .state-button {
   margin-top: 8px;
   min-height: 40px;
@@ -608,6 +746,25 @@ button {
 
   .state-body {
     font-size: 13px;
+  }
+
+  .state[data-scenario="custom"] {
+    max-width: none;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "preview"
+      "controls";
+    justify-items: center;
+    text-align: center;
+  }
+
+  .state[data-scenario="custom"] .state-preview {
+    gap: 10px;
+  }
+
+  .custom-controls {
+    grid-template-columns: 1fr;
+    width: min(100%, 360px);
   }
 }
 
