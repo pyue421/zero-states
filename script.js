@@ -24,7 +24,7 @@ const scenarios = [
     body:
       "There isn't enough activity to populate this view yet. Connect a source or wait for fresh events to arrive.",
     action: "Connect source",
-    artwork: "field",
+    artwork: "harmonics",
   },
   {
     id: "onboarding",
@@ -33,7 +33,7 @@ const scenarios = [
     body:
       "Complete a few quick steps to unlock the workspace. We'll guide you through the essentials from here.",
     action: "Begin onboarding",
-    artwork: "orbital",
+    artwork: "rosette",
   },
 ];
 
@@ -81,7 +81,7 @@ function handleTabKeydown(event) {
 function getArtworkMarkup(artwork) {
   if (artwork === "waves") {
     return `
-      <div class="artboard">
+      <div class="artboard artboard-waves">
         <svg viewBox="0 0 220 140" class="art-svg waves-svg" aria-hidden="true">
           <defs>
             <linearGradient id="wavesGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -93,57 +93,70 @@ function getArtworkMarkup(artwork) {
               <feGaussianBlur stdDeviation="8"></feGaussianBlur>
             </filter>
           </defs>
-          <path d="M-8 62 C 20 28, 58 28, 86 62 S 152 96, 228 58" fill="none" stroke="url(#wavesGradient)" stroke-width="22" stroke-linecap="round" filter="url(#wavesBlur)" opacity="0.78"></path>
-          <path d="M-4 66 C 26 42, 56 42, 86 66 S 146 88, 224 64" fill="none" stroke="#78add2" stroke-width="2.5" stroke-linecap="round"></path>
-          <path d="M14 88 C 42 62, 68 62, 94 88 S 150 114, 208 84" fill="none" stroke="#3a6f95" stroke-opacity="0.42" stroke-width="2" stroke-linecap="round"></path>
+          <path class="graphic-guide" d="M18 70 H202"></path>
+          <path class="graphic-guide graphic-guide-faint" d="M18 44 H202"></path>
+          <path class="graphic-guide graphic-guide-faint" d="M18 96 H202"></path>
+          <path class="graphic-glow wave-glow" d="M-8 60 C 22 28, 58 28, 88 60 S 152 92, 228 58" fill="none" stroke="url(#wavesGradient)" stroke-width="20" stroke-linecap="round" filter="url(#wavesBlur)"></path>
+          <path class="graphic-primary wave-main" d="M8 70 C 32 44, 56 44, 80 70 S 128 96, 152 70 S 176 44, 202 70" fill="none"></path>
+          <path class="graphic-secondary wave-alt" d="M8 70 C 32 96, 56 96, 80 70 S 128 44, 152 70 S 176 96, 202 70" fill="none"></path>
+          <path class="graphic-tertiary wave-tert" d="M8 82 C 32 62, 56 62, 80 82 S 128 102, 152 82 S 176 62, 202 82" fill="none"></path>
+          <circle class="graphic-node" cx="80" cy="70" r="3.5"></circle>
+          <circle class="graphic-node graphic-node-soft" cx="152" cy="70" r="3.5"></circle>
         </svg>
       </div>
     `;
   }
 
-  if (artwork === "field") {
+  if (artwork === "harmonics") {
     return `
-      <div class="artboard">
-        <svg viewBox="0 0 220 140" class="art-svg field-svg" aria-hidden="true">
+      <div class="artboard artboard-harmonics">
+        <svg viewBox="0 0 220 140" class="art-svg harmonics-svg" aria-hidden="true">
           <defs>
-            <radialGradient id="fieldGlow" cx="28%" cy="28%" r="90%">
-              <stop offset="0%" stop-color="#d8ecfb"></stop>
-              <stop offset="70%" stop-color="#72b5da"></stop>
-              <stop offset="100%" stop-color="#2f6f95"></stop>
-            </radialGradient>
-          </defs>
-          <rect x="36" y="28" width="148" height="84" rx="20" fill="url(#fieldGlow)" opacity="0.95"></rect>
-          <rect x="72" y="56" width="76" height="28" rx="14" fill="rgba(29, 72, 95, 0.16)"></rect>
-          <circle cx="110" cy="70" r="4.5" fill="#ffffff" opacity="0.95"></circle>
-          <path d="M28 94 C 52 78, 72 72, 96 82 S 146 100, 194 70" fill="none" stroke="#dff4ff" stroke-opacity="0.5" stroke-width="2"></path>
-        </svg>
-      </div>
-    `;
-  }
-
-  if (artwork === "orbital") {
-    return `
-      <div class="artboard">
-        <svg viewBox="0 0 220 140" class="art-svg orbital-svg" aria-hidden="true">
-          <defs>
-            <linearGradient id="orbitalGradient" x1="12%" y1="20%" x2="88%" y2="74%">
-              <stop offset="0%" stop-color="#dcecf8"></stop>
-              <stop offset="48%" stop-color="#a8c9e5"></stop>
-              <stop offset="100%" stop-color="#7db7dc"></stop>
+            <linearGradient id="harmonicGlow" x1="8%" y1="0%" x2="92%" y2="100%">
+              <stop offset="0%" stop-color="#edf7ff"></stop>
+              <stop offset="50%" stop-color="#bad9ee"></stop>
+              <stop offset="100%" stop-color="#79b4d7"></stop>
             </linearGradient>
           </defs>
-          <ellipse cx="110" cy="70" rx="72" ry="38" fill="url(#orbitalGradient)" opacity="0.55"></ellipse>
-          <path d="M54 72 C 72 28, 148 28, 166 72 C 148 112, 72 112, 54 72 Z" fill="none" stroke="#4f82a7" stroke-opacity="0.44" stroke-width="1.8"></path>
-          <path d="M70 34 C 114 34, 154 54, 154 72 C 154 90, 114 110, 70 110" fill="none" stroke="#2f658c" stroke-opacity="0.35" stroke-width="1.8"></path>
-          <circle cx="110" cy="70" r="10" fill="#ffffff" opacity="0.9"></circle>
-          <circle cx="154" cy="72" r="5.5" fill="#2f6f95" opacity="0.7"></circle>
+          <rect class="graphic-frame" x="34" y="28" width="152" height="84" rx="18"></rect>
+          <path class="graphic-guide" d="M50 49 H170"></path>
+          <path class="graphic-guide" d="M50 70 H170"></path>
+          <path class="graphic-guide" d="M50 91 H170"></path>
+          <path class="graphic-glow harmonic-glow" d="M50 49 C 64 38, 76 38, 90 49 S 116 60, 130 49 S 156 38, 170 49" fill="none" stroke="url(#harmonicGlow)" stroke-width="12" stroke-linecap="round"></path>
+          <path class="graphic-primary harmonic-a" d="M50 49 C 64 38, 76 38, 90 49 S 116 60, 130 49 S 156 38, 170 49" fill="none"></path>
+          <path class="graphic-secondary harmonic-b" d="M50 70 C 68 52, 86 52, 104 70 S 140 88, 170 64" fill="none"></path>
+          <path class="graphic-tertiary harmonic-c" d="M50 91 C 60 74, 72 74, 82 91 S 104 108, 114 91 S 136 74, 146 91 S 160 108, 170 91" fill="none"></path>
+          <circle class="graphic-node" cx="104" cy="70" r="3"></circle>
+        </svg>
+      </div>
+    `;
+  }
+
+  if (artwork === "rosette") {
+    return `
+      <div class="artboard artboard-rosette">
+        <svg viewBox="0 0 220 140" class="art-svg rosette-svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="rosetteGlow" x1="12%" y1="20%" x2="88%" y2="74%">
+              <stop offset="0%" stop-color="#ebf6ff"></stop>
+              <stop offset="48%" stop-color="#b8d8ed"></stop>
+              <stop offset="100%" stop-color="#7cb5d8"></stop>
+            </linearGradient>
+          </defs>
+          <circle class="graphic-guide" cx="110" cy="70" r="42"></circle>
+          <circle class="graphic-guide graphic-guide-faint" cx="110" cy="70" r="58"></circle>
+          <path class="graphic-glow rosette-glow" d="M66 70 C 66 34, 154 34, 154 70 C 154 106, 66 106, 66 70 Z" fill="none" stroke="url(#rosetteGlow)" stroke-width="14" stroke-linecap="round"></path>
+          <path class="graphic-primary rosette-primary" d="M66 70 C 66 34, 154 34, 154 70 C 154 106, 66 106, 66 70 Z" fill="none"></path>
+          <path class="graphic-secondary rosette-secondary" d="M52 70 C 52 20, 168 20, 168 70 C 168 120, 52 120, 52 70 Z" fill="none"></path>
+          <path class="graphic-tertiary rosette-tertiary" d="M66 46 C 96 16, 124 16, 154 46 M66 94 C 96 124, 124 124, 154 94" fill="none"></path>
+          <circle class="graphic-node" cx="110" cy="70" r="3.5"></circle>
         </svg>
       </div>
     `;
   }
 
   return `
-    <div class="artboard">
+    <div class="artboard artboard-lissajous">
       <svg viewBox="0 0 220 140" class="art-svg lissajous-svg" aria-hidden="true">
         <defs>
           <linearGradient id="lissajousGlow" x1="18%" y1="12%" x2="88%" y2="84%">
@@ -155,9 +168,14 @@ function getArtworkMarkup(artwork) {
             <feGaussianBlur stdDeviation="8"></feGaussianBlur>
           </filter>
         </defs>
-        <path d="M48 56 C 72 24, 148 24, 172 56 C 148 88, 72 88, 48 56 Z" fill="none" stroke="url(#lissajousGlow)" stroke-width="18" stroke-linecap="round" filter="url(#lissajousBlur)" opacity="0.72"></path>
-        <path d="M52 78 C 72 20, 96 20, 110 78 C 124 136, 148 136, 168 78" fill="none" stroke="#1e1f23" stroke-opacity="0.82" stroke-width="2.4" stroke-linecap="round"></path>
-        <path d="M52 78 C 72 136, 96 136, 110 78 C 124 20, 148 20, 168 78" fill="none" stroke="#87aeca" stroke-width="1.8" stroke-linecap="round"></path>
+        <path class="graphic-guide" d="M36 70 H184"></path>
+        <path class="graphic-guide graphic-guide-faint" d="M110 22 V118"></path>
+        <path class="graphic-glow lissajous-glow" d="M48 70 C 72 26, 96 26, 110 70 C 124 114, 148 114, 172 70" fill="none" stroke="url(#lissajousGlow)" stroke-width="14" stroke-linecap="round" filter="url(#lissajousBlur)"></path>
+        <path class="graphic-primary loop-a" d="M48 70 C 72 26, 96 26, 110 70 C 124 114, 148 114, 172 70" fill="none"></path>
+        <path class="graphic-secondary loop-b" d="M48 70 C 72 114, 96 114, 110 70 C 124 26, 148 26, 172 70" fill="none"></path>
+        <circle class="graphic-node" cx="110" cy="70" r="3.5"></circle>
+        <circle class="graphic-node graphic-node-soft" cx="48" cy="70" r="2.5"></circle>
+        <circle class="graphic-node graphic-node-soft" cx="172" cy="70" r="2.5"></circle>
       </svg>
     </div>
   `;
