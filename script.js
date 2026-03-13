@@ -2,168 +2,32 @@ const scenarios = [
   {
     id: "page-level",
     label: "Page level",
+    path: "./index.html",
     title: "No data found",
-    body:
-      "Reset filters or adjust the date range.",
+    body: "Reset filters or adjust the date range.",
     action: "Reset Filters",
-    artwork: "lissajous",
   },
   {
     id: "data-states",
     label: "Data states",
+    path: "./data-states.html",
     title: "Empty tables, charts, and lists",
     body:
       "Use these for row-based views when content is missing, including loading skeletons, no data found, and no results after filters are applied.",
     action: "Review data states",
-    artwork: "waves",
   },
   {
     id: "custom",
     label: "Custom",
+    path: "./custom.html",
     title: "Tune your own Lissajous curve",
-    body:
-      "Adjust amplitudes, frequencies, phase, and rotation to build a custom zero-state curve live.",
-    action: "",
-    artwork: "custom",
+    body: "Adjust amplitudes, frequencies, phase, and rotation to build a custom zero-state.",
+    action: "Try custom state",
   },
 ];
 
-const tabList = document.querySelector(".tab-list");
-const panel = document.querySelector("#panel");
-const state = document.querySelector("#state");
-const illustration = document.querySelector("#illustration");
-const stateTitle = document.querySelector("#state-title");
-const stateBody = document.querySelector("#state-body");
-const stateButton = document.querySelector("#state-button");
-const themeToggle = document.querySelector("#theme-toggle");
-const customControls = document.querySelector("#custom-controls");
-
-let activeScenario = scenarios[0].id;
-let pageLevelAnimationFrame = 0;
-let pageLevelAnimationStart = 0;
-
-const customCurve = {
-  cx: 110,
-  cy: 70,
-  amplitudeX: 54,
-  amplitudeY: 42,
-  frequencyX: 2,
-  frequencyY: 3,
-  phase: Math.PI / 2,
-  rotation: 0,
-  samples: 280,
-};
-
-const customContent = {
-  title: "Tune your own Lissajous curve",
-  body: "Adjust amplitudes, frequencies, phase, and rotation to build a custom zero-state.",
-  action: "Try custom state",
-};
-
-const customControlConfig = [
-  { key: "amplitudeX", inputId: "control-amplitude-x", outputId: "value-amplitude-x", format: (value) => `${Math.round(value)}` },
-  { key: "amplitudeY", inputId: "control-amplitude-y", outputId: "value-amplitude-y", format: (value) => `${Math.round(value)}` },
-  { key: "frequencyX", inputId: "control-frequency-x", outputId: "value-frequency-x", format: (value) => `${Math.round(value)}` },
-  { key: "frequencyY", inputId: "control-frequency-y", outputId: "value-frequency-y", format: (value) => `${Math.round(value)}` },
-  { key: "phase", inputId: "control-phase", outputId: "value-phase", format: (value) => `${(value / Math.PI).toFixed(2)}π` },
-  { key: "rotation", inputId: "control-rotation", outputId: "value-rotation", format: (value) => `${(value * 57.3).toFixed(0)}°` },
-];
-
-function createTabButton(scenario) {
-  const button = document.createElement("button");
-  button.className = "tab-button";
-  button.type = "button";
-  button.role = "tab";
-  button.id = `tab-${scenario.id}`;
-  button.textContent = scenario.label;
-  button.setAttribute("aria-controls", "panel");
-  button.setAttribute("aria-selected", String(scenario.id === activeScenario));
-  button.tabIndex = scenario.id === activeScenario ? 0 : -1;
-  button.addEventListener("click", () => setScenario(scenario.id));
-  button.addEventListener("keydown", handleTabKeydown);
-  return button;
-}
-
-function handleTabKeydown(event) {
-  const currentIndex = scenarios.findIndex((scenario) => scenario.id === activeScenario);
-  if (currentIndex === -1) return;
-
-  const offset = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 :
-    event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
-
-  if (!offset) return;
-
-  event.preventDefault();
-  const nextIndex = (currentIndex + offset + scenarios.length) % scenarios.length;
-  const nextScenario = scenarios[nextIndex];
-  setScenario(nextScenario.id);
-  document.querySelector(`#tab-${nextScenario.id}`)?.focus();
-}
-
 const TAU = Math.PI * 2;
-
-function getLissajousPoint(config, t) {
-  const {
-    cx,
-    cy,
-    amplitudeX,
-    amplitudeY,
-    frequencyX,
-    frequencyY,
-    phase = 0,
-    rotation = 0,
-  } = config;
-
-  const rawX = amplitudeX * Math.sin(frequencyX * t + phase);
-  const rawY = amplitudeY * Math.sin(frequencyY * t);
-
-  const cos = Math.cos(rotation);
-  const sin = Math.sin(rotation);
-
-  return {
-    x: cx + rawX * cos - rawY * sin,
-    y: cy + rawX * sin + rawY * cos,
-  };
-}
-
-function getLissajousPath(config) {
-  const samples = config.samples ?? 240;
-  const points = [];
-
-  for (let index = 0; index < samples; index += 1) {
-    const t = (TAU * index) / samples;
-    points.push(getLissajousPoint(config, t));
-  }
-
-  if (!points.length) return "";
-
-  let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)} `;
-
-  for (let index = 0; index < points.length; index += 1) {
-    const p0 = points[(index - 1 + points.length) % points.length];
-    const p1 = points[index];
-    const p2 = points[(index + 1) % points.length];
-    const p3 = points[(index + 2) % points.length];
-
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
-
-    path += `C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} `;
-  }
-
-  return `${path}Z`;
-}
-
-function renderCurve(className, config, extraAttributes = "") {
-  return `<path class="${className}" d="${getLissajousPath(config)}" fill="none" ${extraAttributes}></path>`;
-}
-
-function renderNode(className, config, t, radius) {
-  const point = getLissajousPoint(config, t);
-  return `<circle class="${className}" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="${radius}"></circle>`;
-}
+const THEME_STORAGE_KEY = "zero-states-theme";
 
 const illustrationStates = {
   "page-level": {
@@ -192,38 +56,6 @@ const illustrationStates = {
       phase: Math.PI / 4,
       rotation: -0.3,
       samples: 220,
-    },
-  },
-  custom: {
-    svgClass: "state-curve-svg custom-curve-svg",
-    curve: customCurve,
-  },
-  "component-level": {
-    svgClass: "state-curve-svg component-curve-svg",
-    curve: {
-      cx: 110,
-      cy: 70,
-      amplitudeX: 38,
-      amplitudeY: 54,
-      frequencyX: 2,
-      frequencyY: 1,
-      phase: Math.PI / 2,
-      rotation: 0,
-      samples: 260,
-    },
-  },
-  "guidance-prompt": {
-    svgClass: "state-curve-svg guidance-curve-svg",
-    curve: {
-      cx: 110,
-      cy: 70,
-      amplitudeX: 52,
-      amplitudeY: 46,
-      frequencyX: 2,
-      frequencyY: 3,
-      phase: Math.PI / 2,
-      rotation: 0.08,
-      samples: 280,
     },
   },
 };
@@ -264,6 +96,133 @@ const pageLevelCurveStates = [
   },
 ];
 
+const customCurve = {
+  cx: 110,
+  cy: 70,
+  amplitudeX: 54,
+  amplitudeY: 42,
+  frequencyX: 2,
+  frequencyY: 3,
+  phase: Math.PI / 2,
+  rotation: 0,
+  samples: 280,
+};
+
+const customContent = {
+  title: "Tune your own Lissajous curve",
+  body: "Adjust amplitudes, frequencies, phase, and rotation to build a custom zero-state.",
+  action: "Try custom state",
+};
+
+const customControlConfig = [
+  {
+    key: "amplitudeX",
+    inputId: "control-amplitude-x",
+    outputId: "value-amplitude-x",
+    format: (value) => `${Math.round(value)}`,
+  },
+  {
+    key: "amplitudeY",
+    inputId: "control-amplitude-y",
+    outputId: "value-amplitude-y",
+    format: (value) => `${Math.round(value)}`,
+  },
+  {
+    key: "frequencyX",
+    inputId: "control-frequency-x",
+    outputId: "value-frequency-x",
+    format: (value) => `${Math.round(value)}`,
+  },
+  {
+    key: "frequencyY",
+    inputId: "control-frequency-y",
+    outputId: "value-frequency-y",
+    format: (value) => `${Math.round(value)}`,
+  },
+  {
+    key: "phase",
+    inputId: "control-phase",
+    outputId: "value-phase",
+    format: (value) => `${(value / Math.PI).toFixed(2)}π`,
+  },
+  {
+    key: "rotation",
+    inputId: "control-rotation",
+    outputId: "value-rotation",
+    format: (value) => `${(value * 57.3).toFixed(0)}°`,
+  },
+];
+
+let pageLevelAnimationFrame = 0;
+let pageLevelAnimationStart = 0;
+let customAnimationFrame = 0;
+let customAnimationStart = 0;
+
+function getScenarioById(id) {
+  return scenarios.find((scenario) => scenario.id === id) ?? scenarios[0];
+}
+
+function getLissajousPoint(config, t) {
+  const {
+    cx,
+    cy,
+    amplitudeX,
+    amplitudeY,
+    frequencyX,
+    frequencyY,
+    phase = 0,
+    rotation = 0,
+  } = config;
+
+  const rawX = amplitudeX * Math.sin(frequencyX * t + phase);
+  const rawY = amplitudeY * Math.sin(frequencyY * t);
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+
+  return {
+    x: cx + rawX * cos - rawY * sin,
+    y: cy + rawX * sin + rawY * cos,
+  };
+}
+
+function getLissajousPath(config) {
+  const samples = config.samples ?? 240;
+  const points = [];
+
+  for (let index = 0; index < samples; index += 1) {
+    const t = (TAU * index) / samples;
+    points.push(getLissajousPoint(config, t));
+  }
+
+  if (!points.length) return "";
+
+  let path = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)} `;
+
+  for (let index = 0; index < points.length; index += 1) {
+    const p0 = points[(index - 1 + points.length) % points.length];
+    const p1 = points[index];
+    const p2 = points[(index + 1) % points.length];
+    const p3 = points[(index + 2) % points.length];
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    path += `C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} `;
+  }
+
+  return `${path}Z`;
+}
+
+function renderCurve(className, config, extraAttributes = "") {
+  return `<path class="${className}" d="${getLissajousPath(config)}" fill="none" ${extraAttributes}></path>`;
+}
+
+function renderNode(className, config, t, radius) {
+  const point = getLissajousPoint(config, t);
+  return `<circle class="${className}" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="${radius}"></circle>`;
+}
+
 function interpolateCurve(from, to, progress) {
   return {
     cx: from.cx + (to.cx - from.cx) * progress,
@@ -282,6 +241,117 @@ function easeInOutSine(progress) {
   return -(Math.cos(Math.PI * progress) - 1) / 2;
 }
 
+function stopPageLevelAnimation() {
+  if (!pageLevelAnimationFrame) return;
+
+  cancelAnimationFrame(pageLevelAnimationFrame);
+  pageLevelAnimationFrame = 0;
+  pageLevelAnimationStart = 0;
+}
+
+function stopCustomAnimation() {
+  if (!customAnimationFrame) return;
+
+  cancelAnimationFrame(customAnimationFrame);
+  customAnimationFrame = 0;
+  customAnimationStart = 0;
+}
+
+function getIllustrationMarkup(pageId) {
+  const state = pageId === "custom"
+    ? { svgClass: "state-curve-svg custom-curve-svg", curve: customCurve }
+    : (illustrationStates[pageId] ?? illustrationStates["page-level"]);
+  const glowCurve = {
+    ...state.curve,
+    amplitudeX: state.curve.amplitudeX + 4,
+    amplitudeY: state.curve.amplitudeY + 4,
+    samples: Math.max(state.curve.samples, 260),
+  };
+  const isPageLevel = pageId === "page-level";
+  const isCustomPage = pageId === "custom";
+
+  return `
+    <div class="artboard artboard-lissajous">
+      <svg viewBox="0 0 220 140" class="art-svg ${state.svgClass}" aria-hidden="true">
+        <defs>
+          <linearGradient id="stateCurveGradient" x1="18%" y1="12%" x2="88%" y2="84%">
+            <stop offset="0%" stop-color="var(--art-grad-warm)"></stop>
+            <stop offset="52%" stop-color="var(--art-grad-soft)"></stop>
+            <stop offset="100%" stop-color="var(--art-grad-cool)"></stop>
+          </linearGradient>
+          <filter id="stateCurveBlur">
+            <feGaussianBlur stdDeviation="8"></feGaussianBlur>
+          </filter>
+        </defs>
+        ${renderCurve(
+          "graphic-glow curve-glow",
+          glowCurve,
+          'stroke="url(#stateCurveGradient)" stroke-width="14" stroke-linecap="round" filter="url(#stateCurveBlur)"'
+        )}
+        ${renderCurve(`graphic-primary curve-path${isPageLevel ? " curve-path-page" : ""}${isCustomPage ? " curve-path-custom" : ""}`, state.curve)}
+        ${isPageLevel
+          ? `${renderNode("graphic-node motion-node motion-node-page", state.curve, 0, 4.25)}
+             ${renderNode("graphic-node graphic-node-soft motion-node motion-node-page-soft", state.curve, 0.5 * TAU, 4.25)}`
+          : isCustomPage
+            ? renderNode("graphic-node motion-node motion-node-custom", state.curve, 0, 3.75)
+            : renderNode("graphic-node", state.curve, 0.125 * TAU, 3.25)}
+      </svg>
+    </div>
+  `;
+}
+
+function applyTheme(themeToggle) {
+  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+  const isDark = storedTheme === "dark";
+
+  document.body.classList.toggle("dark", isDark);
+  themeToggle.setAttribute("aria-pressed", String(isDark));
+  themeToggle.setAttribute("aria-label", isDark ? "Turn off dark mode" : "Turn on dark mode");
+}
+
+function initThemeToggle(themeToggle) {
+  applyTheme(themeToggle);
+
+  themeToggle.addEventListener("click", () => {
+    const isDark = !document.body.classList.contains("dark");
+    document.body.classList.toggle("dark", isDark);
+    window.localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light");
+    themeToggle.setAttribute("aria-pressed", String(isDark));
+    themeToggle.setAttribute("aria-label", isDark ? "Turn off dark mode" : "Turn on dark mode");
+  });
+}
+
+function buildNavigation(tabList, currentPageId) {
+  const fragment = document.createDocumentFragment();
+
+  scenarios.forEach((scenario) => {
+    const link = document.createElement("a");
+    link.className = "tab-button";
+    link.href = scenario.path;
+    link.id = `tab-${scenario.id}`;
+    link.textContent = scenario.label;
+
+    if (scenario.id === currentPageId) {
+      link.setAttribute("aria-current", "page");
+    }
+
+    fragment.appendChild(link);
+  });
+
+  tabList.appendChild(fragment);
+}
+
+function renderStaticPage(pageId, refs) {
+  const scenario = getScenarioById(pageId);
+
+  refs.state.dataset.scenario = pageId;
+  refs.stateTitle.textContent = scenario.title;
+  refs.stateBody.textContent = scenario.body;
+  refs.stateButton.textContent = scenario.action;
+  refs.stateButton.hidden = !scenario.action;
+  refs.illustration.innerHTML = getIllustrationMarkup(pageId);
+}
+
 function syncCustomControls() {
   customControlConfig.forEach(({ key, inputId, outputId, format }) => {
     const input = document.querySelector(`#${inputId}`);
@@ -294,52 +364,71 @@ function syncCustomControls() {
   });
 }
 
-function updateCustomCurve(key, value) {
-  customCurve[key] = value;
+function renderCustomPage(refs) {
+  stopCustomAnimation();
+  refs.state.dataset.scenario = "custom";
+  refs.stateTitle.textContent = customContent.title;
+  refs.stateBody.textContent = customContent.body;
+  refs.stateButton.textContent = customContent.action;
+  refs.stateButton.hidden = !customContent.action.trim();
+  refs.illustration.innerHTML = getIllustrationMarkup("custom");
+  animateCustomIllustration(refs);
+}
+
+function initCustomControls(refs) {
   syncCustomControls();
+  renderCustomPage(refs);
 
-  if (activeScenario === "custom") {
-    renderIllustration("custom");
-  }
+  customControlConfig.forEach(({ key, inputId, outputId, format }) => {
+    const input = document.querySelector(`#${inputId}`);
+    const output = document.querySelector(`#${outputId}`);
+    if (!input || !output) return;
+
+    input.addEventListener("input", (event) => {
+      const nextValue = Number(event.target.value);
+      customCurve[key] = nextValue;
+      output.value = format(nextValue);
+      output.textContent = format(nextValue);
+      renderCustomPage(refs);
+    });
+  });
+
+  const customTitleInput = document.querySelector("#control-title");
+  const customDescriptionInput = document.querySelector("#control-description");
+  const customButtonInput = document.querySelector("#control-button");
+
+  if (!customTitleInput || !customDescriptionInput || !customButtonInput) return;
+
+  customTitleInput.value = customContent.title;
+  customDescriptionInput.value = customContent.body;
+  customButtonInput.value = customContent.action;
+
+  customTitleInput.addEventListener("input", (event) => {
+    customContent.title = event.target.value;
+    renderCustomPage(refs);
+  });
+
+  customDescriptionInput.addEventListener("input", (event) => {
+    customContent.body = event.target.value;
+    renderCustomPage(refs);
+  });
+
+  customButtonInput.addEventListener("input", (event) => {
+    customContent.action = event.target.value;
+    renderCustomPage(refs);
+  });
 }
 
-function updateCustomContent(key, value) {
-  customContent[key] = value;
-
-  if (activeScenario !== "custom") return;
-
-  if (key === "title") {
-    stateTitle.textContent = value;
-  }
-
-  if (key === "body") {
-    stateBody.textContent = value;
-  }
-
-  if (key === "action") {
-    stateButton.textContent = value;
-    stateButton.hidden = !value.trim();
-  }
-}
-
-function stopPageLevelAnimation() {
-  if (!pageLevelAnimationFrame) return;
-
-  cancelAnimationFrame(pageLevelAnimationFrame);
-  pageLevelAnimationFrame = 0;
-  pageLevelAnimationStart = 0;
-}
-
-function animatePageLevelIllustration() {
+function animatePageLevelIllustration(refs) {
   stopPageLevelAnimation();
 
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reducedMotion) return;
 
-  const primaryPath = illustration.querySelector(".page-curve-svg .curve-path-page");
-  const glowPath = illustration.querySelector(".page-curve-svg .curve-glow");
-  const leadNode = illustration.querySelector(".page-curve-svg .motion-node-page");
-  const trailNode = illustration.querySelector(".page-curve-svg .motion-node-page-soft");
+  const primaryPath = refs.illustration.querySelector(".page-curve-svg .curve-path-page");
+  const glowPath = refs.illustration.querySelector(".page-curve-svg .curve-glow");
+  const leadNode = refs.illustration.querySelector(".page-curve-svg .motion-node-page");
+  const trailNode = refs.illustration.querySelector(".page-curve-svg .motion-node-page-soft");
 
   if (!primaryPath || !glowPath || !leadNode || !trailNode) return;
 
@@ -347,7 +436,7 @@ function animatePageLevelIllustration() {
   const totalMs = cycleMs * pageLevelCurveStates.length;
 
   function step(timestamp) {
-    if (activeScenario !== "page-level") {
+    if (document.body.dataset.page !== "page-level") {
       stopPageLevelAnimation();
       return;
     }
@@ -394,121 +483,61 @@ function animatePageLevelIllustration() {
   pageLevelAnimationFrame = requestAnimationFrame(step);
 }
 
-function getArtworkMarkup(artwork) {
-  const state = illustrationStates[artwork] ?? illustrationStates["page-level"];
-  const glowCurve = {
-    ...state.curve,
-    amplitudeX: state.curve.amplitudeX + 4,
-    amplitudeY: state.curve.amplitudeY + 4,
-    samples: Math.max(state.curve.samples, 260),
-  };
-  const isPageLevel = artwork === "page-level";
+function animateCustomIllustration(refs) {
+  stopCustomAnimation();
 
-  return `
-    <div class="artboard artboard-lissajous">
-      <svg viewBox="0 0 220 140" class="art-svg ${state.svgClass}" aria-hidden="true">
-        <defs>
-          <linearGradient id="stateCurveGradient" x1="18%" y1="12%" x2="88%" y2="84%">
-            <stop offset="0%" stop-color="var(--art-grad-warm)"></stop>
-            <stop offset="52%" stop-color="var(--art-grad-soft)"></stop>
-            <stop offset="100%" stop-color="var(--art-grad-cool)"></stop>
-          </linearGradient>
-          <filter id="stateCurveBlur">
-            <feGaussianBlur stdDeviation="8"></feGaussianBlur>
-          </filter>
-        </defs>
-        ${renderCurve(
-          "graphic-glow curve-glow",
-          glowCurve,
-          'stroke="url(#stateCurveGradient)" stroke-width="14" stroke-linecap="round" filter="url(#stateCurveBlur)"'
-        )}
-        ${renderCurve(`graphic-primary curve-path${isPageLevel ? " curve-path-page" : ""}`, state.curve)}
-        ${isPageLevel
-          ? `${renderNode("graphic-node motion-node motion-node-page", state.curve, 0, 4.25)}
-             ${renderNode("graphic-node graphic-node-soft motion-node motion-node-page-soft", state.curve, 0.5 * TAU, 4.25)}`
-          : renderNode("graphic-node", state.curve, 0.125 * TAU, 3.25)}
-      </svg>
-    </div>
-  `;
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reducedMotion) return;
+
+  const customNode = refs.illustration.querySelector(".custom-curve-svg .motion-node-custom");
+  if (!customNode) return;
+
+  function step(timestamp) {
+    if (document.body.dataset.page !== "custom") {
+      stopCustomAnimation();
+      return;
+    }
+
+    if (!customAnimationStart) {
+      customAnimationStart = timestamp;
+    }
+
+    const orbit = ((timestamp - customAnimationStart) / 5200) % 1;
+    const point = getLissajousPoint(customCurve, orbit * TAU);
+
+    customNode.setAttribute("cx", point.x.toFixed(2));
+    customNode.setAttribute("cy", point.y.toFixed(2));
+
+    customAnimationFrame = requestAnimationFrame(step);
+  }
+
+  customAnimationFrame = requestAnimationFrame(step);
 }
 
-function renderIllustration(artwork) {
-  stopPageLevelAnimation();
-  illustration.innerHTML = getArtworkMarkup(artwork);
+function initPage() {
+  const currentPageId = document.body.dataset.page || "page-level";
+  const tabList = document.querySelector(".tab-list");
+  const state = document.querySelector("#state");
+  const illustration = document.querySelector("#illustration");
+  const stateTitle = document.querySelector("#state-title");
+  const stateBody = document.querySelector("#state-body");
+  const stateButton = document.querySelector("#state-button");
+  const themeToggle = document.querySelector("#theme-toggle");
+  const refs = { state, illustration, stateTitle, stateBody, stateButton };
 
-  if (artwork === "page-level") {
-    animatePageLevelIllustration();
+  buildNavigation(tabList, currentPageId);
+  initThemeToggle(themeToggle);
+
+  if (currentPageId === "custom") {
+    initCustomControls(refs);
+    return;
+  }
+
+  renderStaticPage(currentPageId, refs);
+
+  if (currentPageId === "page-level") {
+    animatePageLevelIllustration(refs);
   }
 }
 
-function setScenario(id) {
-  const scenario = scenarios.find((entry) => entry.id === id);
-  if (!scenario) return;
-
-  activeScenario = id;
-
-  document.querySelectorAll(".tab-button").forEach((button) => {
-    const isSelected = button.id === `tab-${id}`;
-    button.setAttribute("aria-selected", String(isSelected));
-    button.tabIndex = isSelected ? 0 : -1;
-  });
-
-  panel.setAttribute("aria-labelledby", `tab-${id}`);
-  state.dataset.scenario = id;
-  stateTitle.textContent = id === "custom" ? customContent.title : scenario.title;
-  stateBody.textContent = id === "custom" ? customContent.body : scenario.body;
-  stateButton.textContent = id === "custom" ? customContent.action : scenario.action;
-  stateButton.hidden = !(id === "custom" ? customContent.action.trim() : scenario.action);
-  customControls.hidden = id !== "custom";
-  renderIllustration(scenario.id);
-}
-
-customControlConfig.forEach(({ key, inputId, outputId, format }) => {
-  const input = document.querySelector(`#${inputId}`);
-  const output = document.querySelector(`#${outputId}`);
-  if (!input || !output) return;
-
-  input.addEventListener("input", (event) => {
-    const nextValue = Number(event.target.value);
-    output.value = format(nextValue);
-    output.textContent = format(nextValue);
-    updateCustomCurve(key, nextValue);
-  });
-});
-
-const customTitleInput = document.querySelector("#control-title");
-const customDescriptionInput = document.querySelector("#control-description");
-const customButtonInput = document.querySelector("#control-button");
-
-customTitleInput.value = customContent.title;
-customDescriptionInput.value = customContent.body;
-customButtonInput.value = customContent.action;
-
-customTitleInput.addEventListener("input", (event) => {
-  updateCustomContent("title", event.target.value);
-});
-
-customDescriptionInput.addEventListener("input", (event) => {
-  updateCustomContent("body", event.target.value);
-});
-
-customButtonInput.addEventListener("input", (event) => {
-  updateCustomContent("action", event.target.value);
-});
-
-syncCustomControls();
-
-scenarios.forEach((scenario) => {
-  tabList.appendChild(createTabButton(scenario));
-});
-
-setScenario(activeScenario);
-
-themeToggle.addEventListener("click", () => {
-  const isDark = document.body.classList.toggle("dark");
-  themeToggle.setAttribute("aria-pressed", String(isDark));
-  themeToggle.setAttribute(
-    "aria-label",
-    isDark ? "Turn off dark mode" : "Turn on dark mode"
-  );
-});
+initPage();
